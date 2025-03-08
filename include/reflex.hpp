@@ -6,7 +6,7 @@ namespace rfx
 {
 
 
-// Member descriptor holding a member’s name and pointer.
+// member descriptor holding a member’s name and pointer.
 template<typename T, typename MemberT>
 struct member_descriptor
 {
@@ -20,7 +20,7 @@ constexpr member_descriptor<T, MemberT> make_member(const char* name, MemberT T:
     return { name, pointer };
 }
 
-// Helper function that accepts an arbitrary number of field pairs and returns a tuple.
+// helper function that accepts an arbitrary number of field pairs and returns a tuple.
 template<typename T, typename... Pairs>
 constexpr auto reflect_fields(Pairs... pairs)
 {
@@ -37,7 +37,7 @@ struct is_reflectable<T, std::void_t<decltype(T::reflect())>> : std::true_type {
 template<typename T>
 constexpr bool is_reflectable_v = is_reflectable<T>::value;
 
-// Iterate over each member using the reflect() function.
+// iterate over each member using the reflect() function.
 template<typename T, typename F>
 void for_each_member(T& obj, F&& f)
 {
@@ -58,6 +58,4 @@ void for_each_member(T& obj, F&& f)
         return rfx::reflect_fields<ThisType>(__VA_ARGS__); \
     }
 
-// A helper macro to avoid repeating the field name twice.
-// In your static reflect() function you must first declare a type alias named `ThisType`.
 #define RFX_MEMBER(x) std::pair<const char*, decltype(&ThisType::x)>{ #x, &ThisType::x }

@@ -23,21 +23,26 @@ namespace __IMPL__
 {
 
 
-// For arithmetic types.
+// for arithmetic types.
 template<typename T>
-std::enable_if_t<std::is_arithmetic_v<T>, std::string> _to_json_impl(const T& value)
+std::string _to_json_impl(const T& value) requires std::is_arithmetic_v<T>
 {
     return std::to_string(value);
 }
 
-// For std::string.
+std::string _to_json_impl(const bool value)
+{
+    return (value) ? "true" : "false";
+}
+
+// for std::string.
 std::string _to_json_impl(const std::string& s)
 {
     // For simplicity, special characters are not escaped.
     return "\"" + s + "\"";
 }
 
-// For std::optional.
+// for std::optional.
 template<typename T>
 std::string _to_json_impl(const std::optional<T>& opt)
 {
@@ -47,7 +52,7 @@ std::string _to_json_impl(const std::optional<T>& opt)
     return to_json(*opt);
 }
 
-// For std::vector
+// for std::vector
 template<typename T>
 std::string _to_json_impl(const std::vector<T>& vec)
 {
@@ -67,15 +72,15 @@ std::string _to_json_impl(const std::vector<T>& vec)
     return json;
 }
 
-// For reflectable types.
+// for reflectable types.
 template<typename T>
-std::enable_if_t<is_reflectable_v<T>, std::string> _to_json_impl(const T& obj)
+std::string _to_json_impl(const T& obj) requires is_reflectable_v<T>
 {
     std::string json = "{";
     bool first = true;
     for_each_member(const_cast<T&>(obj),
         [&](const char* name, const auto& member) {
-            // If the member is an optional and not engaged, skip it.
+            // if the member is an optional and not engaged, skip it.
             if constexpr(is_optional_v<std::decay_t<decltype(member)>>) {
                 if (!member)
                     return; 
@@ -94,9 +99,9 @@ std::enable_if_t<is_reflectable_v<T>, std::string> _to_json_impl(const T& obj)
     return json;
 }
 
-// Fallback overload for unsupported types.
+// fallback overload for unsupported types.
 template<typename T>
-std::enable_if_t<!std::is_arithmetic_v<T> && !is_reflectable_v<T> && !std::is_same_v<T, std::string>, std::string> _to_json_impl(const T&)
+std::string _to_json_impl(const T&) requires (!std::is_arithmetic_v<T> && !is_reflectable_v<T> && !std::is_same_v<T, std::string>)
 {
     return "<missing reflection>";
 }
