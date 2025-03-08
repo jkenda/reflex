@@ -39,6 +39,6 @@ TEST(reflex, serialization)
     Person p1{ "Alice", 30, Address{ "Wonderland", 12345, { 172, 0, 0, 1 } }, false };
     Person p2{ "Bob", 25, std::nullopt, true };
 
-    std::cout << "Person 1 JSON:\n" << rfx::to_json(p1) << "\n\n";
-    std::cout << "Person 2 JSON:\n" << rfx::to_json(p2) << "\n\n";
+    EXPECT_EQ(rfx::to_json(p1), R"({"name":"Alice","age":30,"address":{"city":"Wonderland","zip":12345,"IP":[172,0,0,1]},"is_of_age":false})");
+    EXPECT_EQ(rfx::to_json(p2), R"({"name":"Bob","age":25,"is_of_age":true})");
 }
