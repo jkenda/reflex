@@ -24,7 +24,7 @@ constexpr member_descriptor<T, MemberT> make_member(const char* name, MemberT T:
 template<typename T, typename... Pairs>
 constexpr auto reflect_fields(Pairs... pairs)
 {
-    return std::make_tuple( make_member<T>(pairs.first, pairs.second)... );
+    return std::make_tuple(make_member<T>(pairs.first, pairs.second)...);
 }
 
 // SFINAE to detect if a type has a reflect() function.

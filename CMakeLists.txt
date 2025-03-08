@@ -8,6 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(GTest REQUIRED)
 
 add_executable(test test.cpp)
-target_include_directories(test PRIVATE src)
+target_include_directories(test PRIVATE include)
 target_link_libraries(test ${GTEST_LIBRARIES})
 target_compile_options(test PRIVATE -g -Wall -Wextra -Werror)
