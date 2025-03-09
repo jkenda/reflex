@@ -11,15 +11,21 @@ Not implemented: JSON deserialization, other kinds of serdes.
 #include "reflex/reflex.hpp"
 #include "reflex/serialize.hpp"
 
-struct Address {
-    std::string city;
-    int zip;
-    std::vector<int> IP;
-    
-    RFX_STRUCT(Address,
-        RFX_MEMBER(city),
-        RFX_MEMBER(zip),
-        RFX_MEMBER(IP))
+struct IP_Address
+{
+    enum class Type
+    {
+        IPV4, IPV6,
+    } type;
+    std::vector<uint8_t> bits;
+
+    IP_Address(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
+        : type(Type::IPV4), bits({ a, b, c, d })
+    {}
+
+    RFX_STRUCT(IP_Address,
+        RFX_MEMBER(type),
+        RFX_MEMBER(bits))
 };
 
 RFX_ENUM(IP_Address::Type,
@@ -29,14 +35,16 @@ RFX_ENUM(IP_Address::Type,
 struct Person {
     std::string name;
     int age;
-    std::optional<Address> address;
     bool is_of_age;
-    
+    float height_m;
+    std::optional<IP_Address> address;
+
     RFX_STRUCT(Person,
         RFX_MEMBER(name),
         RFX_MEMBER(age),
-        RFX_MEMBER(address),
-        RFX_MEMBER(is_of_age))
+        RFX_MEMBER(is_of_age),
+        RFX_MEMBER(height_m),
+        RFX_MEMBER(address))
 };
 
 int main()
