@@ -18,6 +18,10 @@ struct Address {
         RFX_MEMBER(IP))
 };
 
+RFX_ENUM(IP_Address::Type,
+    RFX_E_MEMBER(IPV4),
+    RFX_E_MEMBER(IPV6))
+
 struct Person {
     std::string name;
     int age;
@@ -33,13 +37,10 @@ struct Person {
 
 int main()
 {
-    Person p1{ "Alice", 30, Address{ "Wonderland", 12345, { 172, 0, 0, 1 } }, false };
-    Person p2{ "Bob", 25, std::nullopt, true };
+    std::cout << rfx::to_json(Person{ "Alice", 17, IP_Address{ 127, 0, 0, 1 }, false });
+    // {"name":"Alice","age":17,"address":{"type":"IPV4","bits":[127,0,0,1]},"is_of_age":false}
 
-    std::cout << rfx::to_json(p1);
-    // {"name":"Alice","age":30,"address":{"city":"Wonderland","zip":12345,"IP":[172,0,0,1]},"is_of_age":false}
-
-    std::cout << rfx::to_json(p2);
+    std::cout << rfx::to_json(Person{ "Bob", 25, std::nullopt, true });
     // {"name":"Bob","age":25,"is_of_age":true}
 }
 ```
