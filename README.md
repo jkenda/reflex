@@ -2,6 +2,7 @@
 
 A simple reflection library for C++.
 _Note_: in development.
+
 Currenty implemented: reflection, JSON serialization.
 Not implemented: JSON deserialization, other kinds of serdes.
 
