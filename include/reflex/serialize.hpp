@@ -2,11 +2,9 @@
 
 #include "reflex.hpp"
 
-#include <format>
 #include <optional>
-#include <sstream>
 #include <cmath>
-#include <iomanip>
+#include <sstream>
 
 namespace rfx
 {
@@ -33,11 +31,14 @@ namespace __IMPL__
 template<typename T>
 std::string _to_json_impl(const T& value) requires std::is_arithmetic_v<T>
 {
-    std::stringstream ss;
+    std::ostringstream ss;
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>)
     {
         if (std::fmod(value, 1) == 0)
-            ss << std::fixed << std::setprecision(1);
+        {
+            ss << std::fixed;
+            ss.precision(1);
+        }
     }
     ss << value;
     return ss.str();
@@ -55,11 +56,20 @@ std::string _to_json_impl(bool value)
     return (value) ? "true" : "false";
 }
 
+// for std::string_view.
+std::string _to_json_impl(const std::string_view& s)
+{
+    // For simplicity, special characters are not escaped.
+    std::string str("\"");
+    str += s;
+    str += "\"";
+    return str;
+}
+
 // for std::string.
 std::string _to_json_impl(const std::string& s)
 {
-    // For simplicity, special characters are not escaped.
-    return "\"" + s + "\"";
+    return to_json(std::string_view(s));
 }
 
 // for std::optional.
@@ -123,7 +133,7 @@ std::string _to_json_impl(const T& obj) requires is_reflectable_struct_v<T>
 template<typename T>
 std::string _to_json_impl(const T& obj) requires is_reflectable_enum_v<T>
 {
-    return std::format("\"{}\"", rfx::enum_value(obj));
+    return to_json(std::string_view(rfx::enum_value(obj)));
 }
 
 // fallback overload for unsupported types.

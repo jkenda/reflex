@@ -5,5 +5,9 @@ pkgs.mkShell {
     cmake
     ninja
     gtest
+
+    # compile time profiling
+    clang
+    ungoogled-chromium
   ];
 }
