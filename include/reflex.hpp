@@ -46,7 +46,18 @@ constexpr bool is_reflectable_struct_v = is_reflectable_struct<T>::value;
 template<typename T, typename... Pairs>
 constexpr auto reflect_enum(Pairs... pairs)
 {
-    return std::unordered_map({ pairs... });
+    std::initializer_list<std::pair<T, const char*>> list{ pairs... };
+    std::vector<const char*> vec;
+    vec.reserve(list.size());
+
+    for (auto& [k, v] : list)
+    {
+        auto underlying = static_cast<size_t>(k);
+        vec.resize(underlying + 1);
+        vec[underlying] = v;
+    }
+
+    return vec;
 }
 
 template <typename T>
@@ -64,7 +75,7 @@ constexpr bool is_reflectable_enum_v = is_reflectable_enum<T>::value;
 
 // iterate over each member using the reflect() function.
 template<typename T, typename F> requires is_reflectable_struct_v<T>
-void for_each_member(T& obj, F&& f)
+constexpr void for_each_member(T& obj, F&& f)
 {
     auto members = T::reflect();
     std::apply(
@@ -76,10 +87,10 @@ void for_each_member(T& obj, F&& f)
 
 // get the string value of the enum
 template<typename T> requires is_reflectable_enum_v<T>
-const char* enum_value(const T& val)
+constexpr const char* enum_value(const T& val)
 {
     auto descript = reflect<T>();
-    return descript[val];
+    return descript[static_cast<size_t>(val)];
 }
 
 
