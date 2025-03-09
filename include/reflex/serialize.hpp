@@ -3,6 +3,10 @@
 #include "reflex.hpp"
 
 #include <format>
+#include <optional>
+#include <sstream>
+#include <cmath>
+#include <iomanip>
 
 namespace rfx
 {
@@ -25,14 +29,28 @@ namespace __IMPL__
 {
 
 
-// for arithmetic types.
+// for other arithmetic types.
 template<typename T>
 std::string _to_json_impl(const T& value) requires std::is_arithmetic_v<T>
 {
-    return std::to_string(value);
+    std::stringstream ss;
+    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>)
+    {
+        if (std::fmod(value, 1) == 0)
+            ss << std::fixed << std::setprecision(1);
+    }
+    ss << value;
+    return ss.str();
 }
 
-std::string _to_json_impl(const bool value)
+// trick for outputting bytes in decimal format
+std::string _to_json_impl(unsigned char value)
+{
+    return _to_json_impl((unsigned short)value);
+}
+
+// for boolean
+std::string _to_json_impl(bool value)
 {
     return (value) ? "true" : "false";
 }

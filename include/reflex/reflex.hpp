@@ -8,7 +8,7 @@ namespace rfx
 
 
 /*
-    struct member descriptor.
+    struct descriptor.
 */
 
 template<typename T, typename MemberT>
@@ -41,7 +41,7 @@ constexpr bool is_reflectable_struct_v = is_reflectable_struct<T>::value;
 
 
 /*
-    enum member descriptor.
+    enum descriptor.
 */
 
 template<typename T, typename... Pairs>
