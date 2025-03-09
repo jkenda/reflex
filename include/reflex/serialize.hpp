@@ -21,7 +21,7 @@ constexpr bool is_optional_v = is_optional<T>::value;
 
 
 template<typename T>
-std::string to_json(const T& value);
+std::ostream& write_json(std::ostream& os, const T& value);
 
 namespace __IMPL__
 {
@@ -29,84 +29,86 @@ namespace __IMPL__
 
 // for other arithmetic types.
 template<typename T>
-std::string _to_json_impl(const T& value) requires std::is_arithmetic_v<T>
+std::ostream& _write_json_impl(std::ostream& os, const T& value) requires std::is_arithmetic_v<T>
 {
-    std::ostringstream ss;
+    os << value;
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>)
     {
         if (std::fmod(value, 1) == 0)
         {
-            ss << std::fixed;
-            ss.precision(1);
+            os << ".0";
         }
     }
-    ss << value;
-    return ss.str();
+
+    return os;
 }
 
 // trick for outputting bytes in decimal format
-std::string _to_json_impl(unsigned char value)
+std::ostream& _write_json_impl(std::ostream& os, unsigned char value)
 {
-    return _to_json_impl((unsigned short)value);
+    write_json(os, (unsigned short)value);
+    return os;
 }
 
 // for boolean
-std::string _to_json_impl(bool value)
+std::ostream& _write_json_impl(std::ostream& os, bool value)
 {
-    return (value) ? "true" : "false";
+    os << (value ? "true" : "false");
+    return os;
 }
 
 // for std::string_view.
-std::string _to_json_impl(const std::string_view& s)
+std::ostream& _write_json_impl(std::ostream& os, const std::string_view& s)
 {
-    // For simplicity, special characters are not escaped.
-    std::string str("\"");
-    str += s;
-    str += "\"";
-    return str;
+    // TODO: escaping
+    os << '"';
+    os << s;
+    os << '"';
+    return os;
 }
 
 // for std::string.
-std::string _to_json_impl(const std::string& s)
+std::ostream& _write_json_impl(std::ostream& os, const std::string& s)
 {
-    return to_json(std::string_view(s));
+    write_json(os, std::string_view(s));
+    return os;
 }
 
 // for std::optional.
 template<typename T>
-std::string _to_json_impl(const std::optional<T>& opt)
+std::ostream& _write_json_impl(std::ostream& os, const std::optional<T>& opt)
 {
     if (!opt)
-        return ""; // Field will be omitted in reflectable types.
+        return os;
 
-    return to_json(*opt);
+    return write_json(os, *opt);
 }
 
 // for std::vector
 template<typename T>
-std::string _to_json_impl(const std::vector<T>& vec)
+std::ostream& _write_json_impl(std::ostream& os, const std::vector<T>& vec)
 {
-    std::string json = "[";
+    os << '[';
 
     bool first = true;
     for (auto& mem : vec)
     {
         if (!first)
-            json += ",";
+            os << ',';
 
-        json += to_json(mem);
+        write_json(os, mem);
         first = false;
     }
 
-    json += "]";
-    return json;
+    os << ']';
+    return os;
 }
 
 // for reflectable structs.
 template<typename T>
-std::string _to_json_impl(const T& obj) requires is_reflectable_struct_v<T>
+std::ostream& _write_json_impl(std::ostream& os, const T& obj) requires is_reflectable_struct_v<T>
 {
-    std::string json = "{";
+    os << '{';
     bool first = true;
     for_each_member(const_cast<T&>(obj),
         [&](const char* name, const auto& member) {
@@ -116,40 +118,51 @@ std::string _to_json_impl(const T& obj) requires is_reflectable_struct_v<T>
                     return; 
             }
             if (!first)
-                json += ",";
+                os << ',';
 
-            json += "\"";
-            json += name;
-            json += "\":";
+            os << '"';
+            os << name;
+            os << "\":";
 
-            json += to_json(member);
+            write_json(os, member);
             first = false;
         });
-    json += "}";
-    return json;
+
+    os << '}';
+    return os;
 }
 
 // for reflectable enums.
 template<typename T>
-std::string _to_json_impl(const T& obj) requires is_reflectable_enum_v<T>
+std::ostream& _write_json_impl(std::ostream& os, const T& obj) requires is_reflectable_enum_v<T>
 {
-    return to_json(std::string_view(rfx::enum_value(obj)));
+    write_json(os, std::string_view(rfx::enum_value(obj)));
+    return os;
 }
 
 // fallback overload for unsupported types.
 template<typename T>
-std::string _to_json_impl(const T&)
+std::ostream& _write_json_impl(std::ostream& os, const T&)
 {
-    return "<missing reflection>";
+    os << "<missing reflection>";
+    return os;
 }
 
 
+}
+
+template<typename T>
+std::ostream& write_json(std::ostream& os, const T& value)
+{
+    return __IMPL__::_write_json_impl(os, value);
 }
 
 template<typename T>
 std::string to_json(const T& value)
 {
-    return __IMPL__::_to_json_impl(value);
+    std::stringstream ss;
+    rfx::write_json(ss, value);
+    return ss.str();
 }
 
 
