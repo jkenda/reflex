@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "reflex.hpp"
-#include "serialize.hpp"
+#include "reflex/reflex.hpp"
+#include "reflex/serialize.hpp"
 
 GTEST_API_ int main(int argc, char **argv)
 {
