@@ -2,6 +2,8 @@
 
 #include "reflex.hpp"
 
+#include <format>
+
 namespace rfx
 {
 
@@ -72,9 +74,9 @@ std::string _to_json_impl(const std::vector<T>& vec)
     return json;
 }
 
-// for reflectable types.
+// for reflectable structs.
 template<typename T>
-std::string _to_json_impl(const T& obj) requires is_reflectable_v<T>
+std::string _to_json_impl(const T& obj) requires is_reflectable_struct_v<T>
 {
     std::string json = "{";
     bool first = true;
@@ -99,9 +101,16 @@ std::string _to_json_impl(const T& obj) requires is_reflectable_v<T>
     return json;
 }
 
+// for reflectable enums.
+template<typename T>
+std::string _to_json_impl(const T& obj) requires is_reflectable_enum_v<T>
+{
+    return std::format("\"{}\"", rfx::enum_value(obj));
+}
+
 // fallback overload for unsupported types.
 template<typename T>
-std::string _to_json_impl(const T&) requires (!std::is_arithmetic_v<T> && !is_reflectable_v<T> && !std::is_same_v<T, std::string>)
+std::string _to_json_impl(const T&)
 {
     return "<missing reflection>";
 }
