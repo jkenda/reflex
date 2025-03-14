@@ -3,6 +3,8 @@
 #include <tuple>
 #include <vector>
 #include <expected>
+#include <cstring>
+#include <string_view>
 
 
 template <typename T>  requires std::is_scoped_enum_v<T>
@@ -20,28 +22,26 @@ enum flags_t
 {
     none = 0,
     inside_parent = 1 << 0,
+    array_of_enum = 1 << 1,
+};
+
+struct member_descriptor
+{
+  const std::string_view name;
+  flags_t flags = none;
 };
 
 namespace __IMPL__
 {
-    template<typename T, typename MemberT>
-    struct member_descriptor
+    constexpr member_descriptor make_member_descriptor(const char* name, flags_t flags)
     {
-      const char* name;
-      MemberT T::* pointer;
-      flags_t flags = none;
-    };
-
-    template<typename T, typename MemberT>
-    constexpr member_descriptor<T, MemberT> make_member(const char* name, MemberT T::* pointer, flags_t flags = none)
-    {
-      return { name, pointer, flags };
+      return { name, flags };
     }
 
     template<typename T, typename... Tuples>
     constexpr auto reflect_fields(Tuples... tuples)
     {
-      return std::make_tuple(make_member<T>(std::get<0>(tuples), std::get<1>(tuples), std::get<2>(tuples))...);
+      return std::make_tuple(tuples...);
     }
 }
 
@@ -78,15 +78,39 @@ template<typename T>
 constexpr bool is_reflectable_enum_v = is_reflectable_enum<T>::value;
 
 
-// iterate over each member using the reflect() function.
-template<typename T, typename F> requires is_reflectable_struct_v<T>
-constexpr void for_each_member(const T& obj, F&& f)
+// get name of member with type T
+// only works for members that are the only ones of that type
+template <typename T, typename MemberT>
+constexpr member_descriptor struct_member_descriptor() requires is_reflectable_struct_v<T>
 {
-    auto members = T::reflect();
+    using tuple_t = std::tuple<const char*, MemberT T::*, rfx::flags_t>;
+
+    constexpr auto members = T::reflect();
+    auto member = std::get<tuple_t>(members);
+    return __IMPL__::make_member_descriptor(std::get<0>(member), std::get<2>(member));
+}
+
+// apply function on each member
+template<typename T, typename F> requires is_reflectable_struct_v<T>
+constexpr void struct_for_each_member(const T& obj, F&& f)
+{
+    constexpr auto members = T::reflect();
     std::apply(
         [&](auto&& ... member_descs)
         {
-            ((f(member_descs.name, obj.*(member_descs.pointer), member_descs.flags)), ...);
+            ((f(std::get<0>(member_descs), obj.*(std::get<1>(member_descs)), std::get<2>(member_descs))), ...);
+        }, members);
+}
+
+// apply function on each member
+template<typename T, typename F> requires is_reflectable_struct_v<T>
+constexpr void struct_for_each_member(T& obj, F&& f)
+{
+    constexpr auto members = T::reflect();
+    std::apply(
+        [&](auto&& ... member_descs)
+        {
+            ((f(std::get<0>(member_descs), obj.*(std::get<1>(member_descs)), std::get<2>(member_descs))), ...);
         }, members);
 }
 
@@ -126,14 +150,15 @@ constexpr auto enum_pairs()
 
 
 #define RFX_STRUCT(this_type, ...) \
-    static auto reflect() { \
+    static constexpr auto reflect() { \
         using ThisType = this_type; \
         return rfx::__IMPL__::reflect_fields<ThisType>(__VA_ARGS__); \
     }
 
-#define RFX_MEMBER(x)       std::tuple<const char*, decltype(&ThisType::x), rfx::flags_t>{ #x, &ThisType::x, rfx::none }
-#define RFX_MEMBER_EX(x, n) std::tuple<const char*, decltype(&ThisType::x), rfx::flags_t>{ n,  &ThisType::x, rfx::none }
-#define RFX_MEMBER_FL(x, f) std::tuple<const char*, decltype(&ThisType::x), rfx::flags_t>{ #x, &ThisType::x, f }
+#define RFX_MEMBER(x)             std::tuple<const char*, decltype(&ThisType::x), rfx::flags_t>{ #x, &ThisType::x, rfx::none }
+#define RFX_MEMBER_EX(x, n)       std::tuple<const char*, decltype(&ThisType::x), rfx::flags_t>{ n,  &ThisType::x, rfx::none }
+#define RFX_MEMBER_FL(x, f)       std::tuple<const char*, decltype(&ThisType::x), rfx::flags_t>{ #x, &ThisType::x, f }
+#define RFX_MEMBER_EX_FL(x, n, f) std::tuple<const char*, decltype(&ThisType::x), rfx::flags_t>{ n, &ThisType::x, f }
 
 #define RFX_ENUM(type, ...) \
     template<> \
