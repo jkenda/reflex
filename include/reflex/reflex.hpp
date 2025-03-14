@@ -2,6 +2,7 @@
 
 #include <tuple>
 #include <vector>
+#include <ranges>
 #include <expected>
 #include <cstring>
 #include <string_view>

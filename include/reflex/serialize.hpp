@@ -110,8 +110,8 @@ std::ostream& _write_json_impl(std::ostream& os, const T& obj) requires is_refle
 {
     os << '{';
     bool first = true;
-    for_each_member(const_cast<T&>(obj),
-        [&](const char* name, const auto& member) {
+    struct_for_each_member(const_cast<T&>(obj),
+        [&](const char* name, const auto& member, flags_t) {
             // if the member is an optional and not engaged, skip it.
             if constexpr(is_optional_v<std::decay_t<decltype(member)>>) {
                 if (!member)
@@ -136,7 +136,7 @@ std::ostream& _write_json_impl(std::ostream& os, const T& obj) requires is_refle
 template<typename T>
 std::ostream& _write_json_impl(std::ostream& os, const T& obj) requires is_reflectable_enum_v<T>
 {
-    write_json(os, std::string_view(rfx::enum_value(obj)));
+    write_json(os, std::string_view(rfx::enum_name_from_value(obj).value_or("<unknown value>")));
     return os;
 }
 

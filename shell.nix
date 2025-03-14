@@ -8,6 +8,6 @@ pkgs.mkShell {
 
     # compile time profiling
     clang
-    ungoogled-chromium
+    #ungoogled-chromium
   ];
 }
